@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>えいけん5きゅう たんごれんしゅう</title>
+<style>
+  :root{
+    --pink:#ff8fa3; --blue:#5db7ff; --green:#5fd38a; --yellow:#ffcd4d;
+    --purple:#b38cff; --orange:#ff9f5b; --ink:#3a3a55; --paper:#fff;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; height:100%; }
+  body{
+    font-family:"Hiragino Maru Gothic ProN","ヒラギノ丸ゴ ProN","Rounded Mplus 1c",
+      "Yu Gothic UI","Yu Gothic","Meiryo",system-ui,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(160deg,#bdeaff 0%,#d9f7e4 45%,#fff3c9 100%);
+    background-attachment:fixed;
+    -webkit-text-size-adjust:100%;
+    touch-action:manipulation;
+  }
+  .wrap{ max-width:760px; margin:0 auto; padding:14px 14px 40px; min-height:100%; }
+  .screen{ display:none; animation:pop .25s ease; }
+  .screen.active{ display:block; }
+  @keyframes pop{ from{ opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+
+  /* ---- top bar ---- */
+  .topbar{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .title{ font-size:clamp(20px,5.5vw,30px); font-weight:800; flex:1;
+    text-shadow:0 2px 0 #fff; letter-spacing:.5px; }
+  .star-pill{ background:#fff; border-radius:999px; padding:8px 14px; font-weight:800;
+    font-size:clamp(15px,4vw,19px); box-shadow:0 3px 0 #e6c84a; color:#c79100; white-space:nowrap; }
+  .iconbtn{ width:46px; height:46px; border:none; border-radius:50%; background:#fff;
+    font-size:22px; box-shadow:0 3px 0 #d8d8e8; cursor:pointer; }
+  .iconbtn:active{ transform:translateY(2px); box-shadow:0 1px 0 #d8d8e8; }
+
+  /* ---- buttons ---- */
+  .btn{ display:block; width:100%; border:none; border-radius:20px; padding:18px;
+    font-size:clamp(18px,4.6vw,22px); font-weight:800; color:#fff; cursor:pointer;
+    box-shadow:0 5px 0 rgba(0,0,0,.18); margin:12px 0; }
+  .btn:active{ transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.18); }
+  .btn.pink{background:var(--pink);} .btn.blue{background:var(--blue);}
+  .btn.green{background:var(--green);} .btn.purple{background:var(--purple);}
+  .btn.orange{background:var(--orange);}
+  .btn.ghost{ background:#fff; color:var(--ink); box-shadow:0 4px 0 #d8d8e8; }
+
+  /* ---- category grid ---- */
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(108px,1fr)); gap:12px; }
+  .cat{ border:none; border-radius:22px; padding:14px 6px 12px; color:#fff; cursor:pointer;
+    box-shadow:0 5px 0 rgba(0,0,0,.16); text-align:center; }
+  .cat:active{ transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.16); }
+  .cat .em{ font-size:clamp(34px,9vw,46px); line-height:1.1; display:block; }
+  .cat .nm{ font-size:clamp(13px,3.6vw,16px); font-weight:800; margin-top:4px; display:block; }
+  .cat .ct{ font-size:11px; opacity:.9; }
+
+  .hint{ text-align:center; color:#6b6b85; font-size:14px; margin:10px 0 2px; }
+  .section-h{ font-size:clamp(18px,4.6vw,22px); font-weight:800; margin:6px 0 4px; }
+
+  /* ---- flashcard ---- */
+  .card{ background:#fff; border-radius:28px; padding:26px 18px; text-align:center;
+    box-shadow:0 8px 22px rgba(80,80,140,.18); }
+  .card .big{ font-size:clamp(80px,26vw,150px); line-height:1; }
+  .card .en{ font-size:clamp(30px,8vw,46px); font-weight:800; margin-top:10px; color:#2a2a45;
+    word-break:break-word; }
+  .card .ja{ font-size:clamp(20px,5.4vw,26px); color:#7a7a95; margin-top:6px; font-weight:700; }
+  .speak{ margin-top:14px; border:none; background:var(--yellow); color:#8a5a00;
+    font-weight:800; border-radius:999px; padding:12px 22px; font-size:18px;
+    box-shadow:0 4px 0 #e0a93a; cursor:pointer; }
+  .speak:active{ transform:translateY(2px); box-shadow:0 2px 0 #e0a93a; }
+  .navrow{ display:flex; gap:12px; margin-top:16px; }
+  .navrow .btn{ margin:0; }
+  .counter{ text-align:center; font-weight:800; color:#5a5a75; margin:14px 0 4px; font-size:16px; }
+
+  /* ---- quiz ---- */
+  .qbar{ height:14px; background:#ffffff; border-radius:999px; overflow:hidden;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.12); margin:6px 0 14px; }
+  .qbar > i{ display:block; height:100%; background:linear-gradient(90deg,#5fd38a,#5db7ff);
+    width:0; transition:width .3s; }
+  .prompt{ background:#fff; border-radius:24px; padding:24px 16px; text-align:center;
+    box-shadow:0 6px 18px rgba(80,80,140,.16); margin-bottom:14px; }
+  .prompt .pem{ font-size:clamp(60px,18vw,110px); line-height:1; }
+  .prompt .pen{ font-size:clamp(30px,8vw,46px); font-weight:800; color:#2a2a45; word-break:break-word; }
+  .prompt .pja{ font-size:clamp(24px,6vw,32px); font-weight:800; color:#2a2a45; }
+  .prompt .ask{ font-size:15px; color:#8a8aa3; margin-top:8px; font-weight:700; }
+  .listen-btn{ border:none; background:var(--blue); color:#fff; border-radius:999px;
+    width:120px; height:120px; font-size:54px; box-shadow:0 6px 0 #2f8fd8; cursor:pointer; }
+  .listen-btn:active{ transform:translateY(3px); box-shadow:0 3px 0 #2f8fd8; }
+  .opts{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .opt{ border:none; border-radius:20px; background:#fff; padding:16px 8px; cursor:pointer;
+    box-shadow:0 5px 0 #dcdcec; font-weight:800; color:#2a2a45; min-height:78px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
+  .opt .oem{ font-size:34px; line-height:1; }
+  .opt .otx{ font-size:clamp(17px,4.6vw,21px); word-break:break-word; }
+  .opt:active{ transform:translateY(2px); box-shadow:0 3px 0 #dcdcec; }
+  .opt.correct{ background:#c8f4d6; box-shadow:0 5px 0 #8ad9a5; }
+  .opt.wrong{ background:#ffd2d2; box-shadow:0 5px 0 #f0a0a0; }
+  .opt:disabled{ opacity:1; }
+
+  .feedback{ text-align:center; font-size:clamp(22px,6vw,30px); font-weight:800;
+    margin:14px 0; min-height:36px; }
+  .feedback.good{ color:#2faa5e; } .feedback.bad{ color:#e06a6a; }
+
+  /* ---- result ---- */
+  .result{ text-align:center; background:#fff; border-radius:28px; padding:28px 18px;
+    box-shadow:0 8px 22px rgba(80,80,140,.18); }
+  .result .face{ font-size:90px; }
+  .result .score{ font-size:clamp(26px,7vw,38px); font-weight:800; margin:8px 0; }
+  .result .msg{ font-size:clamp(18px,5vw,24px); font-weight:800; color:#2faa5e; }
+  .result .got{ font-size:20px; font-weight:800; color:#c79100; margin:10px 0 4px; }
+
+  .pop-star{ position:fixed; pointer-events:none; font-size:34px; animation:rise 1s ease-out forwards; }
+  @keyframes rise{ 0%{opacity:1; transform:translateY(0) scale(1);} 100%{opacity:0; transform:translateY(-120px) scale(1.6);} }
+
+  .shake{ animation:shk .4s; }
+  @keyframes shk{ 0%,100%{transform:none;} 25%{transform:translateX(-7px);} 75%{transform:translateX(7px);} }
+
+  .parent-note{ font-size:12px; color:#7a7a90; text-align:center; margin-top:24px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== HOME ===== -->
+  <section id="home" class="screen active">
+    <div class="topbar">
+      <div class="title">🌟 えいご たんご</div>
+      <div class="star-pill">⭐ <span id="starCount">0</span></div>
+      <button class="iconbtn" id="soundToggle" title="おと">🔊</button>
+    </div>
+    <p class="hint">すきな なかまを えらんでね</p>
+    <div class="grid" id="catGrid"></div>
+    <p class="parent-note">
+      おうちのかたへ：このアプリは1つのHTMLファイルだけで うごきます(インターネット不要)。<br>
+      音声がでないときは、右上の🔊を押して もう一度ためしてください。
+    </p>
+  </section>
+
+  <!-- ===== MODE SELECT ===== -->
+  <section id="mode" class="screen">
+    <div class="topbar">
+      <button class="iconbtn" onclick="goHome()">🏠</button>
+      <div class="title" id="modeTitle">なかま</div>
+    </div>
+    <p class="hint">れんしゅうの しかたを えらんでね</p>
+    <button class="btn pink"   onclick="startCards()">🃏 カードで おぼえる</button>
+    <button class="btn green"  onclick="startQuiz('quiz')">✏️ えらぶ クイズ</button>
+    <button class="btn blue"   onclick="startQuiz('listen')">👂 きいて クイズ</button>
+    <button class="btn ghost"  onclick="goHome()">← もどる</button>
+  </section>
+
+  <!-- ===== FLASHCARDS ===== -->
+  <section id="cards" class="screen">
+    <div class="topbar">
+      <button class="iconbtn" onclick="openMode(state.category)">↩️</button>
+      <div class="title">カード</div>
+    </div>
+    <div class="counter" id="cardCounter">1 / 1</div>
+    <div class="card" id="cardBody" onclick="speakCurrentCard()">
+      <div class="big" id="cardEm">🐶</div>
+      <div class="en" id="cardEn">dog</div>
+      <div class="ja" id="cardJa">いぬ</div>
+      <button class="speak" onclick="event.stopPropagation(); speakCurrentCard()">🔊 もういちど きく</button>
+    </div>
+    <div class="navrow">
+      <button class="btn ghost" onclick="prevCard()">← まえ</button>
+      <button class="btn orange" onclick="nextCard()">つぎ →</button>
+    </div>
+  </section>
+
+  <!-- ===== QUIZ / LISTEN ===== -->
+  <section id="quiz" class="screen">
+    <div class="topbar">
+      <button class="iconbtn" onclick="openMode(state.category)">↩️</button>
+      <div class="title" id="quizTitle">クイズ</div>
+    </div>
+    <div class="counter" id="qCounter">もんだい 1 / 10</div>
+    <div class="qbar"><i id="qProgress"></i></div>
+    <div class="prompt" id="qPrompt"></div>
+    <div class="opts" id="qOpts"></div>
+    <div class="feedback" id="qFeedback"></div>
+  </section>
+
+  <!-- ===== RESULT ===== -->
+  <section id="result" class="screen">
+    <div class="result">
+      <div class="face" id="rFace">🎉</div>
+      <div class="score" id="rScore">8 / 10 もん せいかい!</div>
+      <div class="msg" id="rMsg">よくできました!</div>
+      <div class="got" id="rGot">⭐ +8 スター ゲット!</div>
+    </div>
+    <button class="btn green"  onclick="retryRound()">🔁 もういちど</button>
+    <button class="btn blue"   onclick="openMode(state.category)">🔀 べつのモード</button>
+    <button class="btn ghost"  onclick="goHome()">🏠 おうちにもどる</button>
+  </section>
+
+</div>
+
+<script>
+/* =========================================================
+   たんごデータ  [えいご, にほんご, えもじ]
+   ========================================================= */
+const DATA = [
+ {id:'animals', name:'どうぶつ', icon:'🐶', color:'#ff8fa3', words:[
+   ['dog','いぬ','🐶'],['cat','ねこ','🐱'],['bird','とり','🐦'],['fish','さかな','🐟'],
+   ['rabbit','うさぎ','🐰'],['lion','ライオン','🦁'],['elephant','ぞう','🐘'],['monkey','さる','🐵'],
+   ['bear','くま','🐻'],['horse','うま','🐴'],['panda','パンダ','🐼'],['pig','ぶた','🐷'],
+   ['mouse','ねずみ','🐭'],['frog','かえる','🐸'],['tiger','とら','🐯'],['cow','うし','🐮'],['sheep','ひつじ','🐑']
+ ]},
+ {id:'food', name:'たべもの', icon:'🍎', color:'#ff9f5b', words:[
+   ['apple','りんご','🍎'],['banana','バナナ','🍌'],['orange','オレンジ','🍊'],['egg','たまご','🥚'],
+   ['bread','パン','🍞'],['milk','ミルク','🥛'],['rice','ごはん','🍚'],['cake','ケーキ','🍰'],
+   ['ice cream','アイスクリーム','🍨'],['water','みず','💧'],['juice','ジュース','🧃'],['hamburger','ハンバーガー','🍔'],
+   ['pizza','ピザ','🍕'],['meat','にく','🍖'],['tomato','トマト','🍅'],['carrot','にんじん','🥕'],
+   ['grape','ぶどう','🍇'],['strawberry','いちご','🍓'],['tea','おちゃ','🍵'],['cookie','クッキー','🍪']
+ ]},
+ {id:'colors', name:'いろ', icon:'🎨', color:'#b38cff', words:[
+   ['red','あか','🔴'],['blue','あお','🔵'],['yellow','きいろ','🟡'],['green','みどり','🟢'],
+   ['black','くろ','⚫'],['white','しろ','⚪'],['pink','ピンク','🌸'],['purple','むらさき','🟣'],
+   ['orange','オレンジいろ','🟠'],['brown','ちゃいろ','🟤']
+ ]},
+ {id:'numbers', name:'すうじ', icon:'🔢', color:'#5db7ff', words:[
+   ['one','1','1️⃣'],['two','2','2️⃣'],['three','3','3️⃣'],['four','4','4️⃣'],['five','5','5️⃣'],
+   ['six','6','6️⃣'],['seven','7','7️⃣'],['eight','8','8️⃣'],['nine','9','9️⃣'],['ten','10','🔟'],
+   ['eleven','11','1️⃣1️⃣'],['twelve','12','1️⃣2️⃣'],['thirteen','13','1️⃣3️⃣'],['fourteen','14','1️⃣4️⃣'],
+   ['fifteen','15','1️⃣5️⃣'],['twenty','20','2️⃣0️⃣'],['thirty','30','3️⃣0️⃣'],['hundred','100','💯']
+ ]},
+ {id:'family', name:'かぞく', icon:'👪', color:'#5fd38a', words:[
+   ['father','おとうさん','👨'],['mother','おかあさん','👩'],['brother','おにいさん','👦'],['sister','おねえさん','👧'],
+   ['grandfather','おじいさん','👴'],['grandmother','おばあさん','👵'],['baby','あかちゃん','👶'],
+   ['family','かぞく','👪'],['friend','ともだち','🧑‍🤝‍🧑']
+ ]},
+ {id:'days', name:'ようび', icon:'📅', color:'#ffcd4d', words:[
+   ['Sunday','にちようび','📅'],['Monday','げつようび','📅'],['Tuesday','かようび','📅'],
+   ['Wednesday','すいようび','📅'],['Thursday','もくようび','📅'],['Friday','きんようび','📅'],['Saturday','どようび','📅']
+ ]},
+ {id:'months', name:'なんがつ', icon:'🗓️', color:'#ff8fa3', words:[
+   ['January','1がつ','🗓️'],['February','2がつ','🗓️'],['March','3がつ','🗓️'],['April','4がつ','🗓️'],
+   ['May','5がつ','🗓️'],['June','6がつ','🗓️'],['July','7がつ','🗓️'],['August','8がつ','🗓️'],
+   ['September','9がつ','🗓️'],['October','10がつ','🗓️'],['November','11がつ','🗓️'],['December','12がつ','🗓️']
+ ]},
+ {id:'school', name:'がっこう', icon:'🏫', color:'#5db7ff', words:[
+   ['pen','ペン','🖊️'],['pencil','えんぴつ','✏️'],['book','ほん','📖'],['notebook','ノート','📓'],
+   ['eraser','けしゴム','🧽'],['bag','かばん','🎒'],['ruler','ものさし','📏'],['teacher','せんせい','🧑‍🏫'],
+   ['student','せいと','🧑‍🎓'],['school','がっこう','🏫'],['crayon','クレヨン','🖍️'],['scissors','はさみ','✂️'],
+   ['chair','いす','🪑'],['desk','つくえ','🗄️']
+ ]},
+ {id:'body', name:'からだ', icon:'🧒', color:'#b38cff', words:[
+   ['head','あたま','🧠'],['eye','め','👁️'],['ear','みみ','👂'],['nose','はな','👃'],['mouth','くち','👄'],
+   ['hand','て','✋'],['foot','あし','🦶'],['hair','かみのけ','💇'],['face','かお','😊'],['tooth','は','🦷'],['leg','あし','🦵']
+ ]},
+ {id:'sports', name:'スポーツ', icon:'⚽', color:'#5fd38a', words:[
+   ['soccer','サッカー','⚽'],['baseball','やきゅう','⚾'],['tennis','テニス','🎾'],['basketball','バスケットボール','🏀'],
+   ['swimming','すいえい','🏊'],['ski','スキー','⛷️'],['piano','ピアノ','🎹'],['guitar','ギター','🎸'],
+   ['running','はしる','🏃'],['dancing','ダンス','💃'],['singing','うたう','🎤']
+ ]},
+ {id:'nature', name:'しぜん', icon:'🌳', color:'#ff9f5b', words:[
+   ['sun','たいよう','☀️'],['moon','つき','🌙'],['star','ほし','⭐'],['sky','そら','🌌'],['sea','うみ','🌊'],
+   ['mountain','やま','⛰️'],['river','かわ','🏞️'],['tree','き','🌳'],['flower','はな','🌸'],
+   ['rain','あめ','🌧️'],['snow','ゆき','❄️'],['wind','かぜ','🌬️'],['cloud','くも','☁️']
+ ]},
+ {id:'weather', name:'てんき', icon:'🌤️', color:'#5db7ff', words:[
+   ['sunny','はれ','☀️'],['cloudy','くもり','☁️'],['rainy','あめ','🌧️'],['snowy','ゆき','🌨️'],
+   ['hot','あつい','🥵'],['cold','さむい','🥶'],['warm','あたたかい','🌤️'],['windy','かぜがつよい','🌬️']
+ ]},
+ {id:'verbs', name:'うごき', icon:'🏃', color:'#ffcd4d', words:[
+   ['go','いく','🚶'],['come','くる','🙋'],['eat','たべる','🍽️'],['drink','のむ','🥤'],['play','あそぶ','🎮'],
+   ['run','はしる','🏃'],['walk','あるく','🚶'],['read','よむ','📖'],['write','かく','✍️'],['study','べんきょうする','📚'],
+   ['sleep','ねる','😴'],['swim','およぐ','🏊'],['sing','うたう','🎤'],['jump','とぶ','🤸'],['look','みる','👀'],['like','すき','❤️']
+ ]},
+ {id:'home', name:'おうち', icon:'🏠', color:'#ff8fa3', words:[
+   ['house','いえ','🏠'],['room','へや','🚪'],['door','ドア','🚪'],['window','まど','🪟'],['table','テーブル','🍽️'],
+   ['bed','ベッド','🛏️'],['TV','テレビ','📺'],['clock','とけい','🕐'],['car','くるま','🚗'],['bike','じてんしゃ','🚲'],
+   ['train','でんしゃ','🚆'],['bus','バス','🚌'],['box','はこ','📦'],['key','かぎ','🔑'],['cup','コップ','🥤'],['umbrella','かさ','☂️']
+ ]},
+ {id:'hello', name:'あいさつ', icon:'👋', color:'#b38cff', words:[
+   ['hello','こんにちは','👋'],['good morning','おはよう','🌅'],['good night','おやすみ','🌙'],
+   ['thank you','ありがとう','🙏'],['goodbye','さようなら','👋'],['yes','はい','⭕'],['no','いいえ','❌'],
+   ['please','おねがい','🙏'],['sorry','ごめんなさい','😣'],['nice','すてき','✨']
+ ]}
+];
+
+/* objectに変換 */
+const CATS = DATA.map(c=>({...c, words:c.words.map(w=>({en:w[0], ja:w[1], emoji:w[2]}))}));
+const ALL_WORDS = CATS.flatMap(c=>c.words);
+
+/* =========================================================
+   じょうたい / ほぞん
+   ========================================================= */
+const state = { category:null, mode:null, round:null, cardIndex:0 };
+let stars = 0;
+let soundOn = true;
+try{ stars = parseInt(localStorage.getItem('eiken5_stars')||'0',10)||0; }catch(e){}
+try{ soundOn = localStorage.getItem('eiken5_sound')!=='off'; }catch(e){}
+
+function saveStars(){ try{ localStorage.setItem('eiken5_stars', String(stars)); }catch(e){} }
+function renderStars(){ document.getElementById('starCount').textContent = stars; }
+
+/* =========================================================
+   おんせい (Web Speech API)
+   ========================================================= */
+let voices = [];
+function loadVoices(){ try{ voices = speechSynthesis.getVoices()||[]; }catch(e){ voices=[]; } }
+if('speechSynthesis' in window){
+  loadVoices();
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+function speak(text){
+  if(!soundOn || !('speechSynthesis' in window)) return;
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang='en-US'; u.rate=0.8; u.pitch=1.05;
+    const v = voices.find(v=>/en[-_]US/i.test(v.lang)) || voices.find(v=>/^en/i.test(v.lang));
+    if(v) u.voice=v;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* =========================================================
+   がめん きりかえ
+   ========================================================= */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function goHome(){ try{speechSynthesis.cancel();}catch(e){} showScreen('home'); renderStars(); }
+
+/* =========================================================
+   ホーム：なかま いちらん
+   ========================================================= */
+function renderHome(){
+  const grid = document.getElementById('catGrid');
+  grid.innerHTML='';
+  CATS.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='cat'; b.style.background=c.color;
+    b.innerHTML=`<span class="em">${c.icon}</span><span class="nm">${c.name}</span><span class="ct">${c.words.length}こ</span>`;
+    b.onclick=()=>openMode(c);
+    grid.appendChild(b);
+  });
+  // ぜんぶ まぜて
+  const all=document.createElement('button');
+  all.className='cat'; all.style.background='linear-gradient(135deg,#ff8fa3,#5db7ff,#5fd38a)';
+  all.innerHTML=`<span class="em">🌈</span><span class="nm">ぜんぶ</span><span class="ct">${ALL_WORDS.length}こ</span>`;
+  all.onclick=()=>openMode('all');
+  grid.appendChild(all);
+  renderStars();
+}
+
+/* =========================================================
+   モードせんたく
+   ========================================================= */
+function openMode(cat){
+  state.category = cat;
+  const name = cat==='all' ? 'ぜんぶ まぜて' : cat.name;
+  document.getElementById('modeTitle').textContent = (cat==='all'?'🌈 ':(cat.icon+' ')) + name;
+  showScreen('mode');
+}
+function getPool(){ return state.category==='all' ? ALL_WORDS : state.category.words; }
+
+/* =========================================================
+   カードで おぼえる
+   ========================================================= */
+let cardList=[];
+function startCards(){
+  cardList = shuffle(getPool().slice());
+  state.cardIndex=0;
+  showScreen('cards');
+  renderCard();
+}
+function renderCard(){
+  const w=cardList[state.cardIndex];
+  document.getElementById('cardEm').textContent=w.emoji;
+  document.getElementById('cardEn').textContent=w.en;
+  document.getElementById('cardJa').textContent=w.ja;
+  document.getElementById('cardCounter').textContent=`${state.cardIndex+1} / ${cardList.length}`;
+  speak(w.en);
+}
+function speakCurrentCard(){ speak(cardList[state.cardIndex].en); }
+function nextCard(){ state.cardIndex=(state.cardIndex+1)%cardList.length; renderCard(); }
+function prevCard(){ state.cardIndex=(state.cardIndex-1+cardList.length)%cardList.length; renderCard(); }
+
+/* =========================================================
+   クイズ (えらぶ / きいて)
+   ========================================================= */
+function startQuiz(mode){
+  state.mode=mode;
+  const pool=getPool().slice();
+  const n=Math.min(10, pool.length);
+  const qs=shuffle(pool).slice(0,n).map(answer=>{
+    // type: えらぶクイズ は en→ja と ja→en をまぜる。きいてクイズ は おと→えらぶ。
+    let type;
+    if(mode==='listen') type='listen';
+    else type = Math.random()<0.5 ? 'e2j' : 'j2e';
+    return { answer, type, options:makeOptions(answer, type) };
+  });
+  state.round={ questions:qs, index:0, correct:0 };
+  document.getElementById('quizTitle').textContent = mode==='listen' ? '👂 きいて クイズ' : '✏️ えらぶ クイズ';
+  showScreen('quiz');
+  renderQuestion();
+}
+
+function makeOptions(answer, type){
+  // ディストラクター（まちがいの せんたくし）を 3つ
+  let pool = getPool().filter(w=>w.en!==answer.en);
+  if(pool.length<3) pool = ALL_WORDS.filter(w=>w.en!==answer.en);
+  const picks = shuffle(pool).slice(0,3).concat(answer);
+  return shuffle(picks);
+}
+
+function renderQuestion(){
+  const r=state.round, q=r.questions[r.index];
+  document.getElementById('qCounter').textContent=`もんだい ${r.index+1} / ${r.questions.length}`;
+  document.getElementById('qProgress').style.width=`${(r.index/r.questions.length)*100}%`;
+  document.getElementById('qFeedback').textContent='';
+  document.getElementById('qFeedback').className='feedback';
+
+  const prompt=document.getElementById('qPrompt');
+  const opts=document.getElementById('qOpts');
+  opts.innerHTML='';
+
+  if(q.type==='listen'){
+    prompt.innerHTML=`<button class="listen-btn" onclick="speak('${escapeJs(q.answer.en)}')">🔊</button>
+      <div class="ask">きいて、おなじ いみを えらんでね</div>`;
+    speak(q.answer.en);
+    q.options.forEach(o=> opts.appendChild(makeOptBtn(o, `<span class="oem">${o.emoji}</span><span class="otx">${o.ja}</span>`, q)) );
+  } else if(q.type==='e2j'){
+    prompt.innerHTML=`<div class="pen">${q.answer.en}</div>
+      <button class="speak" onclick="speak('${escapeJs(q.answer.en)}')">🔊 きく</button>
+      <div class="ask">どんな いみ？</div>`;
+    speak(q.answer.en);
+    q.options.forEach(o=> opts.appendChild(makeOptBtn(o, `<span class="oem">${o.emoji}</span><span class="otx">${o.ja}</span>`, q)) );
+  } else { // j2e
+    prompt.innerHTML=`<div class="pem">${q.answer.emoji}</div><div class="pja">${q.answer.ja}</div>
+      <div class="ask">えいごは どれ？</div>`;
+    q.options.forEach(o=> opts.appendChild(makeOptBtn(o, `<span class="otx">${o.en}</span>`, q)) );
+  }
+}
+
+function makeOptBtn(option, html, q){
+  const b=document.createElement('button');
+  b.className='opt'; b.innerHTML=html;
+  b._option=option;
+  b.onclick=()=>choose(b, option, q);
+  return b;
+}
+
+let locked=false;
+function choose(btn, option, q){
+  if(locked) return; locked=true;
+  const correct = option.en===q.answer.en;
+  const fb=document.getElementById('qFeedback');
+  // すべてのボタンを むこうか し、せいかいを みどりに
+  document.querySelectorAll('#qOpts .opt').forEach(b=>{
+    b.disabled=true;
+    if(b._option && b._option.en===q.answer.en && b!==btn) b.classList.add('correct');
+  });
+  // えいごの おとを かならず きかせる（がくしゅう）
+  speak(q.answer.en);
+
+  if(correct){
+    btn.classList.add('correct');
+    state.round.correct++;
+    fb.textContent=pick(['すごい!','せいかい!','よくできました!','てんさい!','やったね!','その ちょうし!']);
+    fb.className='feedback good';
+    burstStars(btn);
+    stars++; saveStars(); renderStars();
+  } else {
+    btn.classList.add('wrong');
+    btn.classList.add('shake');
+    fb.textContent='おしい! こたえは「'+q.answer.ja+'」だよ';
+    fb.className='feedback bad';
+  }
+  setTimeout(()=>{
+    locked=false;
+    state.round.index++;
+    if(state.round.index>=state.round.questions.length){ showResult(); }
+    else renderQuestion();
+  }, correct?1100:1900);
+}
+
+/* =========================================================
+   けっか
+   ========================================================= */
+function showResult(){
+  document.getElementById('qProgress').style.width='100%';
+  const r=state.round, n=r.questions.length, c=r.correct;
+  const ratio=c/n;
+  let face,msg;
+  if(ratio>=1){ face='🏆'; msg='ぜんもん せいかい！てんさい！'; }
+  else if(ratio>=0.8){ face='🎉'; msg='よくできました！'; }
+  else if(ratio>=0.5){ face='😊'; msg='いい ちょうし！'; }
+  else { face='💪'; msg='もういちど ちょうせん！'; }
+  document.getElementById('rFace').textContent=face;
+  document.getElementById('rScore').textContent=`${n}もん中 ${c}もん せいかい!`;
+  document.getElementById('rMsg').textContent=msg;
+  document.getElementById('rGot').textContent=`⭐ +${c} スター ゲット!`;
+  showScreen('result');
+  if(ratio>=0.8) confetti();
+}
+function retryRound(){ startQuiz(state.mode); }
+
+/* =========================================================
+   えんしゅつ / ゆーてぃりてぃ
+   ========================================================= */
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+function escapeJs(s){ return String(s).replace(/'/g,"\\'"); }
+
+function burstStars(el){
+  const rect=el.getBoundingClientRect();
+  for(let i=0;i<5;i++){
+    const s=document.createElement('div');
+    s.className='pop-star'; s.textContent='⭐';
+    s.style.left=(rect.left+rect.width/2-17+(Math.random()*60-30))+'px';
+    s.style.top=(rect.top+10)+'px';
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),1000);
+  }
+}
+function confetti(){
+  const em=['🎉','⭐','🎊','✨','🌈','💖'];
+  for(let i=0;i<22;i++){
+    const s=document.createElement('div');
+    s.className='pop-star'; s.textContent=pick(em);
+    s.style.left=(Math.random()*window.innerWidth)+'px';
+    s.style.top=(window.innerHeight*0.4+Math.random()*100)+'px';
+    s.style.fontSize=(24+Math.random()*22)+'px';
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),1100);
+  }
+}
+
+/* おと ON/OFF */
+document.getElementById('soundToggle').onclick=function(){
+  soundOn=!soundOn;
+  this.textContent=soundOn?'🔊':'🔇';
+  try{ localStorage.setItem('eiken5_sound', soundOn?'on':'off'); }catch(e){}
+  if(soundOn) speak('OK');
+};
+document.getElementById('soundToggle').textContent=soundOn?'🔊':'🔇';
+
+/* スタート */
+renderHome();
+</script>
+</body>
+</html>
