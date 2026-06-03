@@ -385,8 +385,8 @@ function renderQuestion(){
   document.getElementById('nextBtn').style.display='none';
 
   const sp=document.getElementById('qSpeak');
-  sp.style.display='none';
-  sp.textContent='🔊 もういちど きく';
+  sp.style.display='inline-block';
+  sp.textContent='🔊 えいぶんを きく';
   sp.onclick=()=>playClip(q);
 
   const opts=document.getElementById('qOpts'); opts.innerHTML='';
@@ -413,7 +413,8 @@ function choose(btn, picked, q){
   exp.innerHTML='<b>かいせつ：</b>'+esc(q.e);
   exp.style.display='block';
   playClip(q);
-  document.getElementById('qSpeak').style.display='inline-block';
+  const sp2=document.getElementById('qSpeak');
+  sp2.style.display='inline-block'; sp2.textContent='🔊 もういちど きく';
 
   const fb=document.getElementById('qFeedback');
   if(correct){
