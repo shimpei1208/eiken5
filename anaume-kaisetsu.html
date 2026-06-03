@@ -90,6 +90,20 @@
   @keyframes rise{ 0%{opacity:1; transform:translateY(0) scale(1);} 100%{opacity:0; transform:translateY(-120px) scale(1.6);} }
   .shake{ animation:shk .4s; }
   @keyframes shk{ 0%,100%{transform:none;} 25%{transform:translateX(-7px);} 75%{transform:translateX(7px);} }
+  .btn.purple{ background:var(--purple); }
+  .navrow{ display:flex; gap:12px; margin-top:16px; }
+  .navrow .btn{ margin:0; flex:1; }
+  .flip{ perspective:1000px; cursor:pointer; }
+  .flip-inner{ position:relative; width:100%; min-height:230px; transition:transform .45s; transform-style:preserve-3d; }
+  .flip-inner.flipped{ transform:rotateY(180deg); }
+  .flip-face{ position:absolute; inset:0; -webkit-backface-visibility:hidden; backface-visibility:hidden;
+    background:#fff; border-radius:28px; box-shadow:0 8px 22px rgba(80,80,140,.18);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+  .flip-back{ transform:rotateY(180deg); background:#eafff0; }
+  .fw{ font-size:clamp(40px,11vw,68px); font-weight:800; color:#2a2a45; word-break:break-word; text-align:center; }
+  .fja{ font-size:clamp(34px,9vw,52px); font-weight:800; color:#2faa5e; text-align:center; }
+  .few{ font-size:clamp(16px,4.4vw,20px); color:#8a8aa3; margin-top:8px; font-weight:700; }
+  .ftap{ font-size:14px; color:#b5b5c8; margin-top:16px; font-weight:700; }
   .parent-note{ font-size:12px; color:#7a7a90; text-align:center; margin-top:24px; line-height:1.6; }
 </style>
 </head>
@@ -103,7 +117,8 @@
       <div class="star-pill">⭐ <span id="starCount">0</span></div>
       <button class="iconbtn" id="soundToggle">🔊</button>
     </div>
-    <p class="hint">れんしゅうしたい なかまを えらんでね（4たくの あなうめ もんだい）</p>
+    <button class="btn purple" onclick="openWordHome()">📖 たんごちょう（えいたんご カード）</button>
+    <p class="hint" style="margin-top:16px;">✏️ あなうめクイズ ― なかまを えらんでね</p>
     <div class="grid" id="catGrid"></div>
     <p class="parent-note">
       おうちのかたへ：英検5級・大問1（短文の空所補充・4択）の練習アプリです。<br>
@@ -128,6 +143,38 @@
     <div class="opts" id="qOpts"></div>
     <div class="feedback" id="qFeedback"></div>
     <button class="btn orange" id="nextBtn" onclick="nextQuestion()">つぎへ →</button>
+  </section>
+
+  <!-- ===== WORD BOOK HOME ===== -->
+  <section id="wordhome" class="screen">
+    <div class="topbar">
+      <button class="iconbtn" onclick="goHome()">🏠</button>
+      <div class="title">📖 たんごちょう</div>
+    </div>
+    <p class="hint">どの なかまの たんごを みる？</p>
+    <div class="grid" id="wordGrid"></div>
+  </section>
+
+  <!-- ===== FLASHCARD ===== -->
+  <section id="flash" class="screen">
+    <div class="topbar">
+      <button class="iconbtn" onclick="openWordHome()">↩️</button>
+      <div class="title" id="flashTitle">たんごちょう</div>
+    </div>
+    <div class="counter" id="flashCounter">1 / 1</div>
+    <div class="flip" id="flipCard" onclick="flipCard()">
+      <div class="flip-inner" id="flipInner">
+        <div class="flip-face flip-front"><div class="fw" id="cardEn"></div><div class="ftap">タップ で いみ</div></div>
+        <div class="flip-face flip-back"><div class="fja" id="cardJa"></div><div class="few" id="cardEnSmall"></div></div>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:14px;">
+      <button class="speak" onclick="playWord(curWord)">🔊 はつおんを きく</button>
+    </div>
+    <div class="navrow">
+      <button class="btn ghost" onclick="prevFlash()">← まえ</button>
+      <button class="btn orange" onclick="nextFlash()">つぎ →</button>
+    </div>
   </section>
 
   <!-- ===== RESULT ===== -->
@@ -275,6 +322,28 @@ CATS.forEach(c=>c.q.forEach((q,i)=>{ q.key=c.id+'_'+i; }));
 const ALL_Q = CATS.flatMap(c=>c.q);
 
 /* =========================================================
+   たんごちょう データ  [えいご, にほんご]
+   ========================================================= */
+const WORDS = [
+ {name:'どうぶつ', color:'#ff8fa3', w:[['dog','いぬ'],['cat','ねこ'],['bird','とり'],['fish','さかな'],['rabbit','うさぎ'],['lion','ライオン'],['elephant','ぞう'],['monkey','さる'],['bear','くま'],['horse','うま'],['panda','パンダ'],['pig','ぶた'],['mouse','ねずみ'],['frog','かえる'],['tiger','とら'],['cow','うし'],['sheep','ひつじ']]},
+ {name:'たべもの', color:'#ff9f5b', w:[['apple','りんご'],['banana','バナナ'],['orange','オレンジ'],['egg','たまご'],['bread','パン'],['milk','ミルク'],['rice','ごはん'],['cake','ケーキ'],['ice cream','アイスクリーム'],['water','みず'],['juice','ジュース'],['hamburger','ハンバーガー'],['pizza','ピザ'],['meat','にく'],['tomato','トマト'],['carrot','にんじん'],['grape','ぶどう'],['strawberry','いちご'],['tea','おちゃ'],['cookie','クッキー']]},
+ {name:'いろ', color:'#b38cff', w:[['red','あか'],['blue','あお'],['yellow','きいろ'],['green','みどり'],['black','くろ'],['white','しろ'],['pink','ピンク'],['purple','むらさき'],['orange','オレンジいろ'],['brown','ちゃいろ']]},
+ {name:'すうじ', color:'#5db7ff', w:[['one','1'],['two','2'],['three','3'],['four','4'],['five','5'],['six','6'],['seven','7'],['eight','8'],['nine','9'],['ten','10'],['eleven','11'],['twelve','12'],['thirteen','13'],['fourteen','14'],['fifteen','15'],['twenty','20'],['thirty','30'],['hundred','100']]},
+ {name:'かぞく', color:'#5fd38a', w:[['father','おとうさん'],['mother','おかあさん'],['brother','おにいさん'],['sister','おねえさん'],['grandfather','おじいさん'],['grandmother','おばあさん'],['baby','あかちゃん'],['family','かぞく'],['friend','ともだち']]},
+ {name:'ようび', color:'#ffcd4d', w:[['Sunday','にちようび'],['Monday','げつようび'],['Tuesday','かようび'],['Wednesday','すいようび'],['Thursday','もくようび'],['Friday','きんようび'],['Saturday','どようび']]},
+ {name:'なんがつ', color:'#ff8fa3', w:[['January','1がつ'],['February','2がつ'],['March','3がつ'],['April','4がつ'],['May','5がつ'],['June','6がつ'],['July','7がつ'],['August','8がつ'],['September','9がつ'],['October','10がつ'],['November','11がつ'],['December','12がつ']]},
+ {name:'がっこう', color:'#5db7ff', w:[['pen','ペン'],['pencil','えんぴつ'],['book','ほん'],['notebook','ノート'],['eraser','けしゴム'],['bag','かばん'],['ruler','ものさし'],['teacher','せんせい'],['student','せいと'],['school','がっこう'],['crayon','クレヨン'],['scissors','はさみ'],['chair','いす'],['desk','つくえ']]},
+ {name:'からだ', color:'#b38cff', w:[['head','あたま'],['eye','め'],['ear','みみ'],['nose','はな'],['mouth','くち'],['hand','て'],['foot','あし'],['hair','かみのけ'],['face','かお'],['tooth','は'],['leg','あし（脚）']]},
+ {name:'スポーツ', color:'#5fd38a', w:[['soccer','サッカー'],['baseball','やきゅう'],['tennis','テニス'],['basketball','バスケットボール'],['swimming','すいえい'],['ski','スキー'],['piano','ピアノ'],['guitar','ギター'],['running','はしること'],['dancing','ダンス'],['singing','うたうこと']]},
+ {name:'しぜん', color:'#ff9f5b', w:[['sun','たいよう'],['moon','つき'],['star','ほし'],['sky','そら'],['sea','うみ'],['mountain','やま'],['river','かわ'],['tree','き'],['flower','はな'],['rain','あめ'],['snow','ゆき'],['wind','かぜ'],['cloud','くも']]},
+ {name:'てんき', color:'#5db7ff', w:[['sunny','はれ'],['cloudy','くもり'],['rainy','あめ'],['snowy','ゆき'],['hot','あつい'],['cold','さむい'],['warm','あたたかい'],['windy','かぜがつよい']]},
+ {name:'うごき', color:'#ffcd4d', w:[['go','いく'],['come','くる'],['eat','たべる'],['drink','のむ'],['play','あそぶ'],['run','はしる'],['walk','あるく'],['read','よむ'],['write','かく'],['study','べんきょうする'],['sleep','ねる'],['swim','およぐ'],['sing','うたう'],['jump','とぶ'],['look','みる'],['like','すき']]},
+ {name:'おうち', color:'#ff8fa3', w:[['house','いえ'],['room','へや'],['door','ドア'],['window','まど'],['table','テーブル'],['bed','ベッド'],['TV','テレビ'],['clock','とけい'],['car','くるま'],['bike','じてんしゃ'],['train','でんしゃ'],['bus','バス'],['box','はこ'],['key','かぎ'],['cup','コップ'],['umbrella','かさ']]},
+ {name:'あいさつ', color:'#b38cff', w:[['hello','こんにちは'],['good morning','おはよう'],['good night','おやすみ'],['thank you','ありがとう'],['goodbye','さようなら'],['yes','はい'],['no','いいえ'],['please','おねがい'],['sorry','ごめんなさい'],['nice','すてき']]}
+];
+const ALL_WORDS = WORDS.flatMap(c=>c.w);
+
+/* =========================================================
    じょうたい / ほぞん
    ========================================================= */
 const state = { category:null, round:null };
@@ -347,6 +416,54 @@ function renderHome(){
   all.innerHTML=`<span class="nm">ぜんぶ まぜて</span><span class="ct">10もん</span>`;
   all.onclick=()=>startQuiz('all'); grid.appendChild(all);
   renderStars();
+}
+
+/* =========================================================
+   たんごちょう（フリップカード）
+   ========================================================= */
+function wkey(en){ return String(en).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
+let curWord=null;
+function openWordHome(){
+  const grid=document.getElementById('wordGrid'); grid.innerHTML='';
+  WORDS.forEach(c=>{
+    const b=document.createElement('button'); b.className='cat'; b.style.background=c.color;
+    b.innerHTML=`<span class="nm">${c.name}</span><span class="ct">${c.w.length}こ</span>`;
+    b.onclick=()=>startFlash(c); grid.appendChild(b);
+  });
+  const all=document.createElement('button'); all.className='cat';
+  all.style.background='linear-gradient(135deg,#ff8fa3,#5db7ff,#5fd38a)';
+  all.innerHTML=`<span class="nm">ぜんぶ</span><span class="ct">${ALL_WORDS.length}こ</span>`;
+  all.onclick=()=>startFlash('all'); grid.appendChild(all);
+  showScreen('wordhome');
+}
+function startFlash(cat){
+  const list = (cat==='all' ? ALL_WORDS : cat.w).map(x=>({en:x[0], ja:x[1]}));
+  state.flashList = shuffle(list); state.flashIndex = 0;
+  document.getElementById('flashTitle').textContent = (cat==='all'?'📖 ぜんぶ':'📖 '+cat.name);
+  showScreen('flash'); renderFlash();
+}
+function renderFlash(){
+  curWord = state.flashList[state.flashIndex];
+  document.getElementById('flipInner').classList.remove('flipped');
+  document.getElementById('cardEn').textContent = curWord.en;
+  document.getElementById('cardJa').textContent = curWord.ja;
+  document.getElementById('cardEnSmall').textContent = curWord.en;
+  document.getElementById('flashCounter').textContent = `${state.flashIndex+1} / ${state.flashList.length}`;
+}
+function flipCard(){ document.getElementById('flipInner').classList.toggle('flipped'); playWord(curWord); }
+function nextFlash(){ state.flashIndex=(state.flashIndex+1)%state.flashList.length; renderFlash(); }
+function prevFlash(){ state.flashIndex=(state.flashIndex-1+state.flashList.length)%state.flashList.length; renderFlash(); }
+function playWord(w){
+  if(!soundOn || !w) return;
+  try{ if(curAudio){ curAudio.pause(); } }catch(e){}
+  curAudio=null;
+  try{
+    const a=new Audio('audio/words/'+wkey(w.en)+'.wav');
+    curAudio=a; a.onerror=()=>speak(w.en);
+    const p=a.play(); if(p && p.catch) p.catch(()=>speak(w.en));
+    return;
+  }catch(e){}
+  speak(w.en);
 }
 
 /* =========================================================
