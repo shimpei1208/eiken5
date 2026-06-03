@@ -106,8 +106,8 @@
     <p class="hint">れんしゅうしたい なかまを えらんでね（4たくの あなうめ もんだい）</p>
     <div class="grid" id="catGrid"></div>
     <p class="parent-note">
-      おうちのかたへ：英検5級・大問1（短文の空所補充・4択）の練習アプリです。ネット不要で動きます。<br>
-      答えると、日本語訳と「小学生にもわかる かんたんな解説」が出ます。
+      おうちのかたへ：英検5級・大問1（短文の空所補充・4択）の練習アプリです。<br>
+      答えると、日本語訳・かんたんな解説が出て、英文を音声で読み上げます。
     </p>
   </section>
 
@@ -271,6 +271,7 @@ const CATS = [
    {s:"January, February, ___.", o:["March","Monday","Blue","Dog"], a:0, j:"1がつ、2がつ、3がつ。", e:"1がつ・2がつ の つぎは March（3がつ）だよ。"}
  ]}
 ];
+CATS.forEach(c=>c.q.forEach((q,i)=>{ q.key=c.id+'_'+i; }));
 const ALL_Q = CATS.flatMap(c=>c.q);
 
 /* =========================================================
@@ -299,6 +300,27 @@ function speak(text){
     if(v) u.voice=v;
     speechSynthesis.speak(u);
   }catch(e){}
+}
+
+/* =========================================================
+   おんせい：同梱した音声ファイルを さいせい（PCでも タブレットでも 鳴る）
+   ========================================================= */
+let curAudio=null;
+function playClip(q){
+  if(!soundOn) return;
+  try{ if(curAudio){ curAudio.pause(); } }catch(e){}
+  curAudio=null;
+  if(q && q.key){
+    try{
+      const a=new Audio('audio/'+q.key+'.wav');
+      curAudio=a;
+      a.onerror=()=>speak(fullSentence(q));
+      const p=a.play();
+      if(p && p.catch) p.catch(()=>speak(fullSentence(q)));
+      return;
+    }catch(e){}
+  }
+  speak(fullSentence(q));
 }
 
 /* =========================================================
@@ -336,7 +358,7 @@ function startQuiz(cat){
   const n = Math.min(10, pool.length);
   const picked = shuffle(pool).slice(0,n).map(q=>{
     const ans = q.o[q.a];
-    return { s:q.s, j:q.j, e:q.e, ans, opts:shuffle(q.o.slice()) };
+    return { s:q.s, j:q.j, e:q.e, ans, key:q.key, opts:shuffle(q.o.slice()) };
   });
   state.round = { questions:picked, index:0, correct:0, answered:false };
   document.getElementById('quizTitle').textContent = (cat==='all'?'ぜんぶ まぜて':cat.name);
@@ -362,9 +384,10 @@ function renderQuestion(){
   const fb=document.getElementById('qFeedback'); fb.textContent=''; fb.className='feedback';
   document.getElementById('nextBtn').style.display='none';
 
-  document.getElementById('qSpeak').onclick=()=>{
-    speak(r.answered ? fullSentence(q) : q.s.replace('___',' '));
-  };
+  const sp=document.getElementById('qSpeak');
+  sp.style.display='none';
+  sp.textContent='🔊 もういちど きく';
+  sp.onclick=()=>playClip(q);
 
   const opts=document.getElementById('qOpts'); opts.innerHTML='';
   q.opts.forEach((o,i)=>{
@@ -389,7 +412,8 @@ function choose(btn, picked, q){
   const exp=document.getElementById('qExp');
   exp.innerHTML='<b>かいせつ：</b>'+esc(q.e);
   exp.style.display='block';
-  speak(fullSentence(q));
+  playClip(q);
+  document.getElementById('qSpeak').style.display='inline-block';
 
   const fb=document.getElementById('qFeedback');
   if(correct){
@@ -451,7 +475,7 @@ function confetti(){
 document.getElementById('soundToggle').onclick=function(){
   soundOn=!soundOn; this.textContent=soundOn?'🔊':'🔇';
   try{ localStorage.setItem('eiken5_sound', soundOn?'on':'off'); }catch(e){}
-  if(soundOn) speak('OK');
+  if(soundOn){ try{ new Audio('audio/be_0.wav').play().catch(()=>{}); }catch(e){} }
 };
 document.getElementById('soundToggle').textContent=soundOn?'🔊':'🔇';
 
